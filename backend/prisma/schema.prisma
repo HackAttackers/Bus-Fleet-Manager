@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DIRECT_URL")
+}
+
+enum BusStatus {
+  active
+  under_maintainance
+}
+
+enum CrewStatus {
+  available
+  on_duty
+  resting
+}
+
+enum ScheduleStatus {
+  upcoming
+  active
+  completed
+  delayed
+}
+
+enum userRole{
+  scheduler
+  planner
+  manager
+}
+
+model User{
+  id String @id @default(uuid())
+  username String
+  password String
+  Role userRole
+  createdAt DateTime @default(now())
+}
+
+model Bus {
+  id         String     @id @default(uuid())
+  bus_number String     @unique
+  route      Route?     @relation(fields: [routeId], references: [id])
+  routeId    String?
+  status     BusStatus
+  location   String
+  schedule   Schedule[]
+  report     Report[]
+  Crew       Crew[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Crew {
+  id         String     @id @default(uuid())
+  name       String
+  username String
+  pasword String
+  shiftStart DateTime
+  shiftEnd   DateTime
+  bus        Bus?       @relation(fields: [busId], references: [id])
+  busId      String?
+  status     CrewStatus
+  restPeriod Int
+  schedule   Schedule[]
+  report     Report[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Route {
+  id            String     @id @default(uuid())
+  name          String     @unique
+  startLocation String
+  endLocation   String
+  coordinates   Json
+  distance      Float
+  bus           Bus[]
+  schedule      Schedule[]
+  location      Location[]
+  report        Report[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Schedule {
+  id      String         @id @default(uuid())
+  bus     Bus            @relation(fields: [busId], references: [id])
+  busId   String
+  crew    Crew           @relation(fields: [crewId], references: [id])
+  crewId  String
+  route   Route          @relation(fields: [routeId], references: [id])
+  routeId String
+  start   DateTime
+  end     DateTime
+  status  ScheduleStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Location {
+  id        String  @id @default(uuid())
+  latitude  Float
+  longitude Float
+  route     Route[]
+  createdAt DateTime @default(now())
+}
+
+model Report {
+  id                 String   @id @default(uuid())
+  bus                Bus      @relation(fields: [busId], references: [id])
+  busId              String
+  crew               Crew     @relation(fields: [crewId], references: [id])
+  crewId             String
+  route              Route    @relation(fields: [routeId], references: [id])
+  routeId            String
+  start              DateTime
+  end                DateTime
+  issuesReported     String?
+  performanceMetrics Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
